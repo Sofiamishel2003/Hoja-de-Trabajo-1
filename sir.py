@@ -17,6 +17,9 @@ class SIR:
         self.t = 0
         self.dt = dt
     
+    def describe(self):
+        print(f"t: {self.t} \nS: {self.s} \nI: {self.i} \nR: {self.r}")
+        
     # Simular siguiente
     def next(self):
         # Tasas de cambio segun las ecuaciones de Stock-Flow de SIR
