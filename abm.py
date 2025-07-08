@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import random
 
@@ -9,8 +10,10 @@ class Agent:
         self.mask_compliance = mask_compliance  # 0.0 (nunca usa) a 1.0 (siempre usa)
         self.vaccinated = vaccinated  # True si está vacunado
         self.state = "S"  # susceptible, infectado, recuperado
+        self.time_infected = 0
+        self.recovery_time = 0
     
-    def interact(self, others, base_transmition, recovery):
+    def interact(self, others, base_transmition, recovery, t):
         if self.state == "S":
             for other in others:
                 if other.state == "I":
@@ -22,10 +25,14 @@ class Agent:
                         effective_prob *= 0.1  # vacunados tienen 90% menos probabilidad
                     if random.random() < effective_prob:
                         self.state = "I"
+                        self.time_infected = t
                         break
         elif self.state == "I":
             if random.random() < recovery:
+                if self.time_infected>0:
+                    self.recovery_time = t-self.time_infected
                 self.state = "R"
+            
 
 class ABM:
     def __init__(self, population_size, transmition, recovery, initial_infected, vaccination_rate=0.0):
@@ -52,6 +59,14 @@ class ABM:
         print(f"I: {counts['I']} ({counts['I']/self.population_size:.4%})")
         print(f"R: {counts['R']} ({counts['R']/self.population_size:.4%})")
 
+    def mean_recovery(self):
+        times = []
+        for agent in self.agents: 
+            if agent.recovery_time>0:
+                times.append(agent.recovery_time)
+        
+        return np.mean(times)
+
     def step(self):
         # cada agente interactúa con otros agentes
         for agent in self.agents:
@@ -60,7 +75,7 @@ class ABM:
             else:
                 num_contacts = random.randint(5, 15)
             contacts = random.sample(self.agents, min(num_contacts, len(self.agents)-1))
-            agent.interact(contacts, self.transmition, self.recovery)
+            agent.interact(contacts, self.transmition, self.recovery, self.t)
 
         self.t += 1
         counts = {"S": 0, "I": 0, "R": 0}
